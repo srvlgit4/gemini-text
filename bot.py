@@ -4,8 +4,6 @@ import threading
 import telebot
 from flask import Flask
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service 
-from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from docx import Document
 from docx.enum.text import WD_COLOR_INDEX
@@ -67,8 +65,8 @@ def extract_gemini_chat(url, output_filename):
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-gpu') 
 
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=options)
+    # FIXED: Let Selenium 4's built-in manager handle the driver!
+    driver = webdriver.Chrome(options=options)
 
     driver.get(url)
     time.sleep(6)
@@ -168,7 +166,8 @@ def extract_gemini_chat(url, output_filename):
 def send_welcome(message):
     bot.reply_to(message, "👋 Welcome! Send me a Google Gemini shared link, and I will format it into a clean DOCX file for you.")
 
-@bot.message_handler(func=lambda message: "gemini.google.com/share/" in message.text)
+# FIXED: Now checks for both standard and shortened (g.co) links
+@bot.message_handler(func=lambda message: "gemini.google.com/share/" in message.text or "g.co/gemini/share/" in message.text)
 def process_link(message):
     url = message.text.strip()
     processing_msg = bot.reply_to(message, "⏳ Scraping the chat and building your document... Please wait about 15 seconds.")
